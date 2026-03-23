@@ -1,0 +1,62 @@
+name: Do a snap build of TDX checkbox provider
+
+run-name: ${{ github.actor }} is creating testing snap
+
+on:
+  push:
+    branches: 
+      - main
+    paths:
+      - 'tests/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tests/**'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+
+  check-secret:
+    runs-on: ubuntu-24.04
+    outputs:
+      snap-key: ${{ steps.snap-key.outputs.defined }}
+    steps:
+      - id: snap-key
+        name: Set defined=true if SNAPCRAFT7_CREDS is defined
+        if: "${{ env.SNAPSTORE_KEY != '' }}"
+        run: echo "defined=true" >> $GITHUB_OUTPUT
+        env:
+          SNAPSTORE_KEY: ${{ secrets.SNAPCRAFT7_CREDS }}
+
+  build:
+    runs-on: ubuntu-24.04
+    needs: [check-secret]
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout
+
+      - uses: snapcore/action-build@v1
+        name: Build snap
+        id: build
+        with:
+          path: tests
+          snapcraft-channel: latest/stable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checkbox-tdx-provider
+          path: ${{ steps.build.outputs.snap }}
+
+      - name: Verify snap
+        run: |
+          sudo snap install checkbox24
+          sudo snap install --dangerous --classic ${{ steps.build.outputs.snap }}
+
+      - if: needs.check-secret.outputs.snap-key == 'true' && (github.ref_name == 'main')
+        name: Publish snap to edge channel
+        uses: snapcore/action-publish@v1.2.0
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT7_CREDS }}
+        with:
+          snap: ${{ steps.build.outputs.snap }}
+          release: edge

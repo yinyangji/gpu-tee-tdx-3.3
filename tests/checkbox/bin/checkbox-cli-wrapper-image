@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if [ -z "${TDXTEST_GUEST_IMG}" ]; then
+  echo "TDXTEST_GUEST_IMG must be specified!"
+  echo "e.g. export TDXTEST_GUEST_IMG=/tmp/tmp.qcow2"
+  echo "(Use sudo -E to pass environment to sudo)"
+  exit 1
+fi
+
+if ! test -f $TDXTEST_GUEST_IMG; then
+  echo "\$TDXTEST_GUEST_IMG specified, but does not exist!"
+  echo "  Can't find $TDXTEST_GUEST_IMG"
+  exit 1
+fi
+
+# wrapper around the checkbox-cli
+# can't use /snap/bin/checkbox.checkbox-cli as it will run 
+# within the context of the wrong snap and the tdx tests 
+# won't get discovered via PROVIDERPATH
+# checkbox-cli resolves to /snap/checkbox24/current/bin/checkbox-cli
+exec checkbox-cli "$@"

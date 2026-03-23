@@ -1,0 +1,178 @@
+id: tdx-host/test_host_tdx_hardware_enabled
+category_id: tdx-host
+flags: simple
+user: root
+_summary: Check if platform is TDX capable from hardware standpoint
+depends:
+after:
+requires:
+command:
+  setup-env-and-run host/test_host_tdx_hardware.py -k 'test_host_tdx_hardware_enabled'
+
+id: tdx-host/test_host_tdx_cpu
+category_id: tdx-host
+flags: simple
+user: root
+_summary: Check if the CPU is TDX capable
+depends:
+  tdx-host/test_host_tdx_hardware_enabled
+after:
+requires:
+command:
+  setup-env-and-run host/test_host_tdx_software.py -k 'test_host_tdx_cpu'
+
+id: tdx-host/test_host_tdx_software
+category_id: tdx-host
+flags: simple
+user: root
+_summary: Check if the software stack is TDX capable
+depends:
+  tdx-host/test_host_tdx_hardware_enabled
+after:
+requires:
+command:
+  setup-env-and-run host/test_host_tdx_software.py -k 'test_host_tdx_software'
+
+id: tdx-host/test_host_tdx_module_load
+category_id: tdx-host
+flags: simple
+user: root
+_summary: Check if the TDX module is loaded
+depends:
+  tdx-host/test_host_tdx_hardware_enabled
+after:
+requires:
+command:
+  setup-env-and-run host/test_host_tdx_software.py -k 'test_host_tdx_module_load'
+
+id: tdx-boot/td-boot-guest
+category_id: tdx-boot
+flags: simple
+_summary: Test TD boot
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run boot/test_boot_basic.py -k 'test_guest_boot'
+
+id: tdx-boot/td-boot-guest-printk
+category_id: tdx-boot
+flags: simple
+_summary: Test TD boot earlyprintk
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run boot/test_boot_basic.py -k 'test_guest_early_printk'
+
+id: tdx-boot/td-coexist
+category_id: tdx-boot
+flags: simple
+_summary: Test coexistence of TD and VM
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run boot/test_boot_coexist.py -k 'test_coexist_boot'
+
+id: tdx-boot/td-creation-without-ovmf
+category_id: tdx-boot
+flags: simple
+_summary: Test TD creation
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run boot/test_boot_td_creation.py -k 'test_create_td_without_ovmf'
+
+id: tdx-boot/test_4vcpus_1socket_10times
+category_id: tdx-boot
+flags: simple
+_summary: Test multiple TD creation
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run boot/test_boot_multiple.py -k 'test_4vcpus_1socket_10times'
+
+id: tdx-boot/test_4vcpus_2sockets_5times
+category_id: tdx-boot
+flags: simple
+_summary: Test multiple TD creation
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run boot/test_boot_multiple.py -k 'test_4vcpus_2sockets_5times'
+
+id: tdx-guest/test_guest_cpu_off
+category_id: tdx-guest
+flags: simple
+_summary: Test TD with cpu on/off
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run boot/test_guest_cpu_off.py -k 'test_guest_cpu_off'
+
+id: tdx-guest/test_guest_cpu_pinned_off
+category_id: tdx-guest
+flags: simple
+_summary: Test TD with cpu pinned
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run boot/test_guest_cpu_off.py -k 'test_guest_cpu_pinned_off'
+
+id: tdx-guest/test_nmi_debug_off
+category_id: tdx-guest
+flags: simple
+_summary: Test TD nmi after boot
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run test_nmi_debug_off.py -k 'test_nmi_debug_off'
+
+id: tdx-stress/test_stress_boot
+category_id: tdx-stress
+flags: simple
+_summary: Test TD boot loop
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run stress/test_stress_boot.py -k 'test_stress_boot'
+
+id: tdx-eventlog/test_guest_measurement_check_rtmr
+category_id: tdx-guest
+flags: simple
+_summary: Test guest measurements
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run eventlog/test_guest_measurement.py -k 'test_guest_measurement_check_rtmr'
+
+id: tdx-quote/test_quote_check_configfs_tsm
+category_id: tdx-quote
+flags: simple
+_summary: Test guest configfs tsm check
+depends:
+after:
+requires:
+  executable.name == 'qemu-system-x86_64'
+command:
+  setup-env-and-run quote/test_quote_configfs_tsm.py -k 'test_quote_check_configfs_tsm'
