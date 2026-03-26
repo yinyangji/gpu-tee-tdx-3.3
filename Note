@@ -1,0 +1,33 @@
+# TD GPU passthrough intermittent iommufd bind error
+
+Observed error:
+
+`qemu-system-x86_64: ... vfio 0000:03:00.0: error bind device fd=... to iommufd=...: Invalid argument`
+
+## Why it happens intermittently
+
+1. Device teardown/reattach is not fully settled yet (timing race).
+   - After `Clean VM`, kernel/VFIO/IOMMU cleanup can still be in progress.
+   - Immediate restart may hit `EINVAL` on iommufd bind.
+   - Re-running later often succeeds because state has settled.
+
+2. NVSwitch BDFs were included in `--gpus`.
+   - `0000:03:00.0`~`0000:06:00.0` are NVSwitch devices, not regular GPU endpoints.
+   - Treating them as normal `vfio-pci` GPU devices increases instability and bind failures.
+
+## Recommended practice
+
+1. Do NOT include NVSwitch BDFs in `--gpus` for normal GPU passthrough.
+   - Use GPU BDFs only (example set):  
+     `0000:18:00.0,0000:3a:00.0,0000:4b:00.0,0000:5c:00.0,0000:9a:00.0,0000:ba:00.0,0000:ca:00.0,0000:da:00.0`
+
+2. Add a short delay after VM cleanup before starting a new VM.
+   - Suggested wait: 2-5 seconds (up to ~10 seconds if needed).
+
+3. Before launch, verify all target GPU BDFs are bound to `vfio-pci`.
+   - If any target GPU is still on `nvidia`, do not start QEMU yet.
+   - Use gpu-cc/bind-vfio.sh to bind all nvidia device to vfio
+4. startup cmd
+   - GPU_LIST="$(lspci -Dn -d 10de: | awk '{print tolower($1)}' | paste -sd' ' -)"
+   - sudo ./guest-tools/run_td --image=$PWD/guest-tools/image/tdx-guest-ubuntu-24.04-generic.qcow2 --gpus $GPU_LIST
+
