@@ -95,7 +95,8 @@ if [ ! -z "$1" ]; then
     for gpu_bdf in ${GPUS}
     do
 	echo "======= Prepare ${gpu_bdf}"
-	enable_ppcie_mode ${gpu_bdf}
+	# TDX guest 需要 CC 模式才能正常初始化 CUDA
+	enable_cc_mode ${gpu_bdf}
 	# virsh expect input format : pci_0000_b8_00_0
 	virsh_gpu_bdf=$(echo "${gpu_bdf}" | tr :. _)
 	# TMP: detach vfio first if already attached to vfio

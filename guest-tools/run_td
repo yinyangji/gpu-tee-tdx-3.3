@@ -90,32 +90,48 @@ def add_gpus(cmd, gpus):
         cmd.extend(gpu_cmd)
         index = index + 1
 
+
+
 def do_run(img_path, gpus):
     print('Run VM')
     print(f'  Image: {img_path}')
     if len(gpus):
         print(f'  Passthrough GPUs: {gpus}')
+    
+        # 构建网络参数，避免大范围端口映射
+    netdev_cmd = f'user,id=nic0_td,hostfwd=tcp::{ssh_port}-:22'
+    
+    # 添加常用的端口范围，使用较小的范围
+    common_ports = [
+        (8101, 8101),  # Web服务常用端口
+        (8102, 8102),  # 另一个Web服务端口
+        (8103, 8103),  # 数据库服务端口
+    ]
+    
+    for host_port,tdx_port in common_ports:
+        netdev_cmd += f',hostfwd=tcp::{host_port}-:{tdx_port}'
 
     qemu_cmds = ['qemu-system-x86_64',
 		 '-accel', 'kvm',
-		 '-m', '100G', '-smp', '32',
+		 '-m', '512G', '-smp', '32',
 		 '-name', f'{process_name},process={process_name},debug-threads=on',
 		 '-cpu', 'host,-avx10',
 		 '-object', '{"qom-type":"tdx-guest","id":"tdx","quote-generation-socket":{"type": "vsock", "cid":"2","port":"4050"}}',
-		 '-object', 'memory-backend-ram,id=mem0,size=100G',
+		 '-object', 'memory-backend-ram,id=mem0,size=512G',
 		 '-machine', 'q35,kernel_irqchip=split,confidential-guest-support=tdx,memory-backend=mem0',
 		 '-bios', tdvf_params,
-		 '-nographic', '-daemonize',
-                 '-nodefaults', '-vga', 'none',
-		 '-device', 'virtio-net-pci,netdev=nic0_td', '-netdev', f'user,id=nic0_td,hostfwd=tcp::{ssh_port}-:22',
+		 '-nographic', '-daemonize','-nodefaults', '-vga', 'none',
+		 '-device', 'virtio-net-pci,netdev=nic0_td', 
+         '-netdev', netdev_cmd,
 		 '-drive', f'file={img_path},if=none,id=virtio-disk0',
 		 '-device', 'virtio-blk-pci,drive=virtio-disk0',
 		 '-pidfile', pidfile
 		 ]
-
+    # qemu_cmds 已经把 `netdev_cmd` 作为完整参数传给了 `-netdev`，
+    # 注意不要对字符串做 `list.extend()`，否则会把字符串拆成字符逐个追加。
     add_vsock(qemu_cmds)
     add_gpus(qemu_cmds, gpus)
-
+    print(qemu_cmds)
     subprocess.run(qemu_cmds, stderr=subprocess.STDOUT)
 
     do_print()
