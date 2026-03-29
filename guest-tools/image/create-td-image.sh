@@ -52,7 +52,7 @@ fi
 LOGFILE=/tmp/tdx-guest-setup.txt
 FORCE_RECREATE=false
 TMP_GUEST_IMG_PATH="/tmp/tdx-guest-tmp.qcow2"
-SIZE=100
+SIZE=1024
 GUEST_USER=${GUEST_USER:-"tdx"}
 GUEST_PASSWORD=${GUEST_PASSWORD:-"123456"}
 GUEST_HOSTNAME=${GUEST_HOSTNAME:-"tdx-guest"}
